@@ -36,14 +36,14 @@ def main():
         "--output",
         "-O",
         "-o",
-        help="output file or directory (if it ends with .json it is "
-        "recognized as file, else as directory)",
+        help="output file.txt or directory (if it ends with .json it is "
+        "recognized as file.txt, else as directory)",
     )
     default_config_file = os.path.join(os.path.expanduser("~"), ".labelmerc")
     parser.add_argument(
         "--config",
         dest="config",
-        help="config file or yaml-format string (default: {})".format(
+        help="config file.txt or yaml-format string (default: {})".format(
             default_config_file
         ),
         default=default_config_file,
@@ -53,8 +53,8 @@ def main():
         "--nodata",
         dest="store_data",
         action="store_false",
-        help="stop storing image data to JSON file",
-        default=argparse.SUPPRESS,
+        help="stop storing image data to JSON file.txt",
+        default=argparse.SUPPRESS,#表示不显示该参数的帮助信息.
     )
     parser.add_argument(
         "--autosave",
@@ -72,20 +72,20 @@ def main():
     )
     parser.add_argument(
         "--flags",
-        help="comma separated list of flags OR file containing flags",
+        help="comma separated list of flags OR file.txt containing flags",
         default=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--labelflags",
         dest="label_flags",
-        help=r"yaml string of label specific flags OR file containing json "
+        help=r"yaml string of label specific flags OR file.txt containing json "
         r"string of label specific flags (ex. {person-\d+: [male, tall], "
         r"dog-\d+: [black, brown, white], .*: [occluded]})",  # NOQA
         default=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--labels",
-        help="comma separated list of labels OR file containing labels",
+        help="comma separated list of labels OR file.txt containing labels",
         default=argparse.SUPPRESS,
     )
     parser.add_argument(
@@ -107,6 +107,9 @@ def main():
         help="epsilon to find nearest vertex on canvas",
         default=argparse.SUPPRESS,
     )
+    parser.add_argument("--imageDir",default='/home/lyn/Documents/workspace/datasets/outputs/wood/inference/resized/bad/images')
+    parser.add_argument("--labelDir", default='/home/lyn/Documents/workspace/datasets/outputs/wood/inference/resized/bad/labels')
+    parser.add_argument("--saveDir", default='/home/lyn/Documents/workspace/datasets/outputs/wood/inference/resized/bad/labels2')
     args = parser.parse_args()
 
     if args.version:
@@ -147,7 +150,7 @@ def main():
     if not config["labels"] and config["validate_label"]:
         logger.error(
             "--labels must be specified with --validatelabel or "
-            "validate_label: true in the config file "
+            "validate_label: true in the config file.txt "
             "(ex. ~/.labelmerc)."
         )
         sys.exit(1)
@@ -174,6 +177,9 @@ def main():
         filename=filename,
         output_file=output_file,
         output_dir=output_dir,
+        labelDir=args.labelDir,
+        imageDir=args.imageDir,
+        saveDir=args.saveDir
     )
 
     if reset_config:
@@ -189,3 +195,4 @@ def main():
 # this main block is required to generate executable by pyinstaller
 if __name__ == "__main__":
     main()
+

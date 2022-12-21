@@ -55,7 +55,14 @@ class MainWindow(QtWidgets.QMainWindow):
         output=None,
         output_file=None,
         output_dir=None,
+        labelDir = None,# add
+        imageDir = None,# add
+        saveDir = None,# add
     ):
+        self.labelDir = labelDir
+        self.imageDir = imageDir
+        self.saveDir = saveDir
+        print('11',self.labelDir)
         if output is not None:
             logger.warning(
                 "argument output is deprecated, use output_file instead"
@@ -84,7 +91,7 @@ class MainWindow(QtWidgets.QMainWindow):
             *self._config["shape"]["hvertex_fill_color"]
         )
 
-        # Set point size from config file
+        # Set point size from config file.txt
         Shape.point_size = self._config["shape"]["point_size"]
 
         super(MainWindow, self).__init__()
@@ -224,7 +231,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openFile,
             shortcuts["open"],
             "open",
-            self.tr("Open image or label file"),
+            self.tr("Open image or label file.txt"),
         )
         opendir = action(
             self.tr("&Open Dir"),
@@ -254,7 +261,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveFile,
             shortcuts["save"],
             "save",
-            self.tr("Save labels to file"),
+            self.tr("Save labels to file.txt"),
             enabled=False,
         )
         saveAs = action(
@@ -262,7 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveFileAs,
             shortcuts["save_as"],
             "save-as",
-            self.tr("Save labels to a different file"),
+            self.tr("Save labels to a different file.txt"),
             enabled=False,
         )
 
@@ -271,7 +278,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.deleteFile,
             shortcuts["delete_file"],
             "delete",
-            self.tr("Delete current label file"),
+            self.tr("Delete current label file.txt"),
             enabled=False,
         )
 
@@ -296,7 +303,7 @@ class MainWindow(QtWidgets.QMainWindow):
         saveWithImageData = action(
             text="Save With Image Data",
             slot=self.enableSaveImageWithData,
-            tip="Save image data in label file",
+            tip="Save image data in label file.txt",
             checkable=True,
             checked=self._config["store_data"],
         )
@@ -306,7 +313,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.closeFile,
             shortcuts["close"],
             "close",
-            "Close current file",
+            "Close current file.txt",
         )
 
         toggle_keep_prev_mode = action(
@@ -803,7 +810,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Populate the File menu dynamically.
         self.updateFileMenu()
-        # Since loading the file may take some time,
+        # Since loading the file.txt may take some time,
         # make sure it runs in the background.
         if self.filename is not None:
             self.queueEvent(functools.partial(self.loadFile, self.filename))
@@ -857,7 +864,7 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.menus.edit, actions + self.actions.editMenu)
 
     def setDirty(self):
-        # Even if we autosave the file, we keep the ability to undo
+        # Even if we autosave the file.txt, we keep the ability to undo
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
         if self._config["auto_save"] or self.actions.saveAuto.isChecked():
@@ -1130,7 +1137,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.duplicate.setEnabled(n_selected)
         self.actions.copy.setEnabled(n_selected)
         self.actions.edit.setEnabled(n_selected == 1)
-
+    # to do
     def addLabel(self, shape):
         if shape.group_id is None:
             text = shape.label
@@ -1240,7 +1247,7 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
             self.flag_widget.addItem(item)
-
+    # to do
     def saveLabels(self, filename):
         lf = LabelFile()
 
@@ -1258,6 +1265,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return data
 
         shapes = [format_shape(item.shape()) for item in self.labelList]
+        print('shapes:',shapes)
         flags = {}
         for i in range(self.flag_widget.count()):
             item = self.flag_widget.item(i)
@@ -1269,6 +1277,58 @@ class MainWindow(QtWidgets.QMainWindow):
             imageData = self.imageData if self._config["store_data"] else None
             if osp.dirname(filename) and not osp.exists(osp.dirname(filename)):
                 os.makedirs(osp.dirname(filename))
+
+            '''
+            To save label as png format
+            '''
+            import cv2
+            import numpy as np
+            # saveDir  = '/home/lyn/Documents/workspace/datasets/outputs/a carpet on the floor/pick'
+            # imageDir = '/home/lyn/Documents/workspace/datasets/outputs/a carpet on the floor/exp100/' + imagePath
+            # labelDir = '/home/lyn/Documents/workspace/datasets/outputs/a carpet on the floor/labels/' + imagePath
+            # img0 = cv2.imread(self.imgPath)
+            label0 = cv2.imread(self.labelDir + '/' + imagePath )
+            # img_h,img_w,_= img0.shape
+            # points_bg = [(0, 0), (0, img_h), (img_w, img_h), (img_w, 0)]
+            # color_bg = (100, 100, 100)
+            # img = cv2.fillPoly(label0, [np.array(points_bg)], color_bg)
+            print(shapes)
+            for i in range(len(shapes)):
+
+                if len(shapes[i]['points']) == 2:
+                    point = shapes[i]['points']
+                    p1,p2 = point[0],point[1]
+                    x1,x2 = int(p1[0]),int(p2[0])
+                    y1,y2 = int(p1[1]),int(p2[1])
+                    #
+                    pp1 = (x1, y1)
+                    pp2 = (x2, y1)
+                    pp3 = (x2, y2)
+                    pp4 = (x1, y2)
+                    points = [pp1,pp2,pp3,pp4]
+
+                    if shapes[i]['label'] == '100':
+                        img = cv2.fillPoly(label0, [np.array(points, dtype=int)], (100, 100, 100))
+                    elif shapes[i]['label'] == '1':
+                        img = cv2.fillPoly(label0, [np.array(points, dtype=int)], (1, 1, 1))
+                    im = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                    cv2.imwrite(self.saveDir + '/' + imagePath, im)
+                    print('saving...', self.saveDir + '/' + imagePath)
+                else:#
+                    points = shapes[i]['points']
+                    print('555',shapes[i]['label'])
+                    if shapes[i]['label'] == '100':
+                        print('100')
+                        img = cv2.fillPoly(label0, [np.array(points, dtype=int)], (100, 100, 100))
+                    elif shapes[i]['label'] == '1':
+
+                        img = cv2.fillPoly(label0, [np.array(points, dtype=int)], (1, 1, 1))
+
+                    im = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                    cv2.imwrite(self.saveDir + '/' + imagePath, im)
+                    print('saving...',self.saveDir + '/' + imagePath)
+
+                ###############################################
             lf.save(
                 filename=filename,
                 shapes=shapes,
@@ -1464,8 +1524,8 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
     def loadFile(self, filename=None):
-        """Load the specified file, or the last opened file if None."""
-        # changing fileListWidget loads file
+        """Load the specified file.txt, or the last opened file.txt if None."""
+        # changing fileListWidget loads file.txt
         if filename in self.imageList and (
             self.fileListWidget.currentRow() != self.imageList.index(filename)
         ):
@@ -1480,8 +1540,8 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = str(filename)
         if not QtCore.QFile.exists(filename):
             self.errorMessage(
-                self.tr("Error opening file"),
-                self.tr("No such file: <b>%s</b>") % filename,
+                self.tr("Error opening file.txt"),
+                self.tr("No such file.txt: <b>%s</b>") % filename,
             )
             return False
         # assumes same name, but json extension
@@ -1499,10 +1559,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.labelFile = LabelFile(label_file)
             except LabelFileError as e:
                 self.errorMessage(
-                    self.tr("Error opening file"),
+                    self.tr("Error opening file.txt"),
                     self.tr(
                         "<p><b>%s</b></p>"
-                        "<p>Make sure <i>%s</i> is a valid label file."
+                        "<p>Make sure <i>%s</i> is a valid label file.txt."
                     )
                     % (e, label_file),
                 )
@@ -1527,9 +1587,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 for fmt in QtGui.QImageReader.supportedImageFormats()
             ]
             self.errorMessage(
-                self.tr("Error opening file"),
+                self.tr("Error opening file.txt"),
                 self.tr(
-                    "<p>Make sure <i>{0}</i> is a valid image file.<br/>"
+                    "<p>Make sure <i>{0}</i> is a valid image file.txt.<br/>"
                     "Supported image formats: {1}</p>"
                 ).format(filename, ",".join(formats)),
             )
@@ -1744,7 +1804,7 @@ class MainWindow(QtWidgets.QMainWindow):
         fileDialog.setFileMode(FileDialogPreview.ExistingFile)
         fileDialog.setNameFilter(filters)
         fileDialog.setWindowTitle(
-            self.tr("%s - Choose Image or Label file") % __appname__,
+            self.tr("%s - Choose Image or Label file.txt") % __appname__,
         )
         fileDialog.setWindowFilePath(path)
         fileDialog.setViewMode(FileDialogPreview.Detail)
@@ -1784,7 +1844,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.importDirImages(self.lastOpenDir, load=False)
 
         if current_filename in self.imageList:
-            # retain currently selected file
+            # retain currently selected file.txt
             self.fileListWidget.setCurrentRow(
                 self.imageList.index(current_filename)
             )
@@ -1864,7 +1924,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def deleteFile(self):
         mb = QtWidgets.QMessageBox
         msg = self.tr(
-            "You are about to permanently delete this label file, "
+            "You are about to permanently delete this label file.txt, "
             "proceed anyway?"
         )
         answer = mb.warning(self, self.tr("Attention"), msg, mb.Yes | mb.No)
@@ -1874,7 +1934,7 @@ class MainWindow(QtWidgets.QMainWindow):
         label_file = self.getLabelFile()
         if osp.exists(label_file):
             os.remove(label_file)
-            logger.info("Label file is removed: {}".format(label_file))
+            logger.info("Label file.txt is removed: {}".format(label_file))
 
             item = self.fileListWidget.currentItem()
             item.setCheckState(Qt.Unchecked)
@@ -1886,7 +1946,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.noShapes():
             self.errorMessage(
                 "No objects labeled",
-                "You must label at least one object to save the file.",
+                "You must label at least one object to save the file.txt.",
             )
             return False
         return True
@@ -2073,3 +2133,4 @@ class MainWindow(QtWidgets.QMainWindow):
                     images.append(relativePath)
         images = natsort.os_sorted(images)
         return images
+
